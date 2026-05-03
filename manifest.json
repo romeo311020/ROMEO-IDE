@@ -1,7 +1,7 @@
 {
   "name": "ROMANY ULTIMATE IDE",
   "short_name": "ROMANY IDE",
-  "description": "Professional Web IDE for Developers",
+  "description": "Professional Web IDE",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#050507",

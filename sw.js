@@ -1,4 +1,4 @@
-const CACHE_NAME = 'romeo-codepad-v3';
+const CACHE_NAME = 'romany-ide-v4';
 const assets = [
   '/',
   '/index.html',
