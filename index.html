@@ -7,6 +7,12 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007aff">
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ROMANY IDE">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/Gp5QYTPd/Picsart-26-05-03-04-30-32-110.jpg">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <title>ROMANY ULTIMATE IDE | Professional Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     
@@ -107,6 +113,14 @@
         
         /* تجميد الشاشة لمنع السحب العشوائي */
         body { touch-action: manipulation; }
+
+        /* [إضافة جديدة] تنسيق زر التثبيت */
+        #pwa-install-btn {
+            display: none;
+            background: linear-gradient(135deg, #007aff, #00c6ff);
+            margin-top: 10px;
+            animation: fadeInScale 0.6s ease forwards;
+        }
     </style>
 </head>
 <body>
@@ -120,6 +134,9 @@
         <div class="menu-grid">
             <button class="btn btn-primary" onclick="Editor.createNew()">📄 إنشاء ملف جديد (Ctrl+N)</button>
             <button class="btn" onclick="Navigation.to('files')">📂 استعراض الملفات</button>
+            
+            <button id="pwa-install-btn" class="btn" onclick="PWA.install()">📲 تثبيت التطبيق الآن</button>
+            
             <button class="btn" style="opacity: 0.6;">⚙️ الإعدادات (قريباً)</button>
         </div>
     </section>
@@ -175,8 +192,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('SW Registered'))
-                    .catch(err => console.log('SW Failed', err));
+                    .then(reg => console.log('SW Registered Success:', reg.scope))
+                    .catch(err => console.log('SW Registration Failed:', err));
             });
         }
 
@@ -390,6 +407,40 @@
             Toast.show("تم تحميل الكود بنجاح (تنزيلات)");
         };
 
+        /* [إضافة جديدة] نظام الـ PWA Install Prompt */
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // منع ظهور الرسالة التلقائية للمتصفح
+            e.preventDefault();
+            // تخزين الحدث ليتم استدعاؤه عند ضغط الزر
+            deferredPrompt = e;
+            // إظهار زر التثبيت الخاص بنا
+            installBtn.style.display = 'flex';
+            console.log('PWA: Install prompt is ready.');
+        });
+
+        const PWA = {
+            async install() {
+                if (!deferredPrompt) return;
+                // إظهار رسالة التثبيت الأصلية
+                deferredPrompt.prompt();
+                // انتظار رد المستخدم
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`PWA: User response to install: ${outcome}`);
+                // تصفير المتغير وإخفاء الزر
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            }
+        };
+
+        // التحقق من تثبيت التطبيق بنجاح
+        window.addEventListener('appinstalled', (event) => {
+            console.log('PWA: App was installed successfully!');
+            Toast.show("تم تثبيت التطبيق بنجاح على جهازك", "success");
+            installBtn.style.display = 'none';
+        });
     </script>
 </body>
 </html>
