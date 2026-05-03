@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007aff">
+    
     <title>ROMANY ULTIMATE IDE | Professional Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     
@@ -167,6 +171,15 @@
     <div id="toast-container"></div>
 
     <script>
+        /* --- كود تسجيل الـ Service Worker (Add-Only) لتفعيل التطبيق --- */
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Failed', err));
+            });
+        }
+
         /* --- الكود الأصلي للجافا سكريبت كما هو بدون تغيير --- */
         const State = {
             files: JSON.parse(localStorage.getItem('romany_files')) || [],
