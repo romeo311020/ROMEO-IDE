@@ -1,7 +1,7 @@
 {
-  "name": "ROMEO CodePad",
-  "short_name": "ROMEO IDE",
-  "description": "Professional Web IDE and Live Matches Tracker",
+  "name": "ROMANY ULTIMATE IDE",
+  "short_name": "ROMANY IDE",
+  "description": "Professional Web IDE for Developers",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#050507",

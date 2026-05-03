@@ -1,8 +1,7 @@
-const CACHE_NAME = 'romeo-codepad-v2';
+const CACHE_NAME = 'romeo-codepad-v3';
 const assets = [
   '/',
   '/index.html',
-  '/matches.html',
   '/manifest.json',
   'https://i.postimg.cc/Gp5QYTPd/Picsart-26-05-03-04-30-32-110.jpg'
 ];
