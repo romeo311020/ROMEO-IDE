@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROMANY ULTIMATE IDE | Professional Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- الكود الأصلي كما هو بدون تغيير --- */
+        :root {
+            --bg: #050507;
+            --surface: rgba(20, 20, 25, 0.7);
+            --accent: #007aff;
+            --accent-glow: rgba(0, 122, 255, 0.3);
+            --text: #e1e1e6;
+            --text-dim: #888891;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --success: #32d74b;
+            --error: #ff453a;
+            --info: #0a84ff;
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { box-sizing: border-box; transition: var(--transition); outline: none; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg); color: var(--text); font-family: 'Cairo', sans-serif; overflow: hidden; }
+
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .page { position: absolute; inset: 0; display: none; flex-direction: column; padding: 20px; animation: fadeInScale 0.5s ease; }
+        .active { display: flex; }
+
+        .btn {
+            background: var(--surface); backdrop-filter: blur(12px); border: 1px solid var(--glass-border);
+            color: white; padding: 12px 24px; border-radius: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600;
+        }
+        .btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 10px 20px var(--accent-glow); }
+        .btn-primary { background: var(--accent); border: none; }
+        .btn-icon { padding: 10px; border-radius: 50%; }
+
+        #page-welcome { justify-content: center; align-items: center; background: radial-gradient(circle at center, #1a1a2e 0%, #050507 100%); }
+        .brand-logo { font-size: 100px; filter: drop-shadow(0 0 20px var(--accent-glow)); margin-bottom: 20px; }
+        .menu-grid { display: grid; gap: 15px; width: 100%; max-width: 350px; }
+
+        .editor-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: var(--surface); backdrop-filter: blur(20px);
+            padding: 15px 25px; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 15px;
+        }
+        .file-meta { display: flex; align-items: center; gap: 15px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+        .status-saved { background: var(--success); box-shadow: 0 0 8px var(--success); }
+
+        .editor-main { flex: 1; position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        #code-editor {
+            width: 100%; height: 100%; background: #0a0a0c; color: #d1d1d1;
+            padding: 25px; font-family: 'Fira Code', monospace; font-size: 16px;
+            line-height: 1.6; border: none; resize: none; direction: ltr;
+        }
+
+        .files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; margin: 0 auto; overflow-y: auto; padding: 20px; }
+        .file-card { 
+            background: var(--surface); border: 1px solid var(--glass-border); border-radius: 18px; 
+            padding: 20px; position: relative; backdrop-filter: blur(10px);
+        }
+        .file-card:hover { border-color: var(--accent); transform: translateY(-5px); }
+        .file-card h3 { margin: 0 0 15px 0; color: var(--accent); }
+        .file-card .date { font-size: 12px; color: var(--text-dim); margin-bottom: 20px; display: block; }
+
+        #modal-preview {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+            z-index: 1000; display: none; flex-direction: column; padding: 30px; animation: fadeInScale 0.3s ease;
+        }
+        .modal-content { flex: 1; background: white; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,0.6); }
+        .modal-toolbar { background: #f0f0f0; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        #preview-iframe { flex: 1; border: none; width: 100%; }
+
+        #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { 
+            padding: 15px 25px; border-radius: 12px; background: var(--surface); backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border); color: white; display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideInRight 0.4s ease;
+        }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        .toast.info { border-left: 4px solid var(--info); }
+
+        #loading-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 3000; display: flex; justify-content: center; align-items: center; }
+        .loader { width: 48px; height: 48px; border: 5px solid var(--accent); border-bottom-color: transparent; border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* --- إضافات CSS جديدة لضبط التنسيق والموبايل (Add-Only) --- */
+        @media (max-width: 768px) {
+            .editor-header { flex-direction: column; gap: 10px; padding: 10px; }
+            .file-meta { width: 100%; justify-content: space-between; }
+            .editor-header div { width: 100%; }
+            .editor-header .btn { flex: 1; font-size: 12px; padding: 8px; }
+            #modal-preview { padding: 10px; }
+            .brand-logo { font-size: 60px; }
+        }
+        
+        /* تجميد الشاشة لمنع السحب العشوائي */
+        body { touch-action: manipulation; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay"><div class="loader"></div></div>
+
+    <section id="page-welcome" class="page active">
+        <div class="brand-logo">🚀</div>
+        <h1 style="font-weight: 700; margin-bottom: 10px;">ROMANY IDE <span style="color: var(--accent); font-size: 0.5em;">PRO</span></h1>
+        <p style="color: var(--text-dim); margin-bottom: 40px;">مرحباً بك عزيزي المطور في بيئة برمجية متكاملة</p>
+        <div class="menu-grid">
+            <button class="btn btn-primary" onclick="Editor.createNew()">📄 إنشاء ملف جديد (Ctrl+N)</button>
+            <button class="btn" onclick="Navigation.to('files')">📂 استعراض الملفات</button>
+            <button class="btn" style="opacity: 0.6;">⚙️ الإعدادات (قريباً)</button>
+        </div>
+    </section>
+
+    <section id="page-editor" class="page">
+        <div class="editor-header">
+            <div class="file-meta">
+                <button class="btn btn-icon" onclick="Navigation.to('welcome')">🔙</button>
+                <div id="save-status" class="status-dot"></div>
+                <input type="text" id="active-filename" style="background:transparent; border:none; color:white; font-size:18px; font-weight:700; width:150px;" placeholder="اسم الملف...">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="Editor.save()">💾 حفظ (Ctrl+S)</button>
+                <button class="btn btn-primary" onclick="Preview.open()">▶ تشغيل (Ctrl+Enter)</button>
+            </div>
+        </div>
+        <div class="editor-main">
+            <textarea id="code-editor" spellcheck="false" placeholder="ابدأ بكتابة كود HTML هنا..."></textarea>
+        </div>
+    </section>
+
+    <section id="page-files" class="page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 20px;">
+            <h2>ملفاتي المحفوظة</h2>
+            <button class="btn" onclick="Navigation.to('welcome')">الرئيسية</button>
+        </div>
+        <div id="files-list" class="files-grid">
+            </div>
+    </section>
+
+    <div id="modal-preview">
+        <div class="modal-content">
+            <div class="modal-toolbar">
+                <div style="display: flex; gap: 10px;">
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></div>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <button class="btn btn-sm" onclick="Preview.reload()" style="padding: 5px 15px; font-size: 12px; color: #333;">🔄 تحديث</button>
+                    <button class="btn btn-sm" onclick="Preview.openInTab()" style="padding: 5px 15px; font-size: 12px; color: #333;">🌐 فتح في تبويب</button>
+                    <button class="btn btn-sm" onclick="Preview.close()" style="padding: 5px 15px; font-size: 12px; background: #ff453a; color: white; border: none;">✖ إغلاق</button>
+                </div>
+            </div>
+            <iframe id="preview-iframe" sandbox="allow-scripts"></iframe>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        /* --- الكود الأصلي للجافا سكريبت كما هو بدون تغيير --- */
+        const State = {
+            files: JSON.parse(localStorage.getItem('romany_files')) || [],
+            activeFileId: localStorage.getItem('romany_last_file') || null,
+            isSaved: true
+        };
+
+        const Navigation = {
+            to(pageId) {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById('page-' + pageId).classList.add('active');
+                if(pageId === 'files') FileSystem.render();
+            }
+        };
+
+        const Toast = {
+            show(msg, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${msg}`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        };
+
+        const Editor = {
+            el: document.getElementById('code-editor'),
+            nameEl: document.getElementById('active-filename'),
+            init() {
+                if(State.activeFileId) {
+                    const file = State.files.find(f => f.id === State.activeFileId);
+                    if(file) this.load(file);
+                }
+                this.el.addEventListener('keydown', (e) => {
+                    if(e.key === 'Tab') {
+                        e.preventDefault();
+                        const start = this.el.selectionStart;
+                        const end = this.el.selectionEnd;
+                        this.el.value = this.el.value.substring(0, start) + "    " + this.el.value.substring(end);
+                        this.el.selectionStart = this.el.selectionEnd = start + 4;
+                    }
+                    if(e.key === 'Enter') { setTimeout(() => this.autoIndent(), 0); }
+                });
+                this.el.addEventListener('input', () => {
+                    State.isSaved = false;
+                    document.getElementById('save-status').classList.remove('status-saved');
+                });
+                setInterval(() => { if(!State.isSaved) this.save(true); }, 3000);
+            },
+            autoIndent() {
+                const pos = this.el.selectionStart;
+                const lines = this.el.value.substring(0, pos).split('\n');
+                const prevLine = lines[lines.length - 2];
+                const indent = prevLine.match(/^\s*/)[0];
+                const start = this.el.selectionStart;
+                this.el.value = this.el.value.substring(0, start) + indent + this.el.value.substring(this.el.selectionEnd);
+                this.el.selectionStart = this.el.selectionEnd = start + indent.length;
+            },
+            createNew() {
+                const id = 'f-' + Date.now();
+                const newFile = { id, name: 'new_file.html', content: '', date: Date.now() };
+                State.files.push(newFile);
+                this.load(newFile);
+                Navigation.to('editor');
+            },
+            load(file) {
+                State.activeFileId = file.id;
+                this.el.value = file.content;
+                this.nameEl.value = file.name;
+                localStorage.setItem('romany_last_file', file.id);
+                State.isSaved = true;
+                document.getElementById('save-status').classList.add('status-saved');
+            },
+            save(isAuto = false) {
+                if(!State.activeFileId) return;
+                const index = State.files.findIndex(f => f.id === State.activeFileId);
+                State.files[index].content = this.el.value;
+                State.files[index].name = this.nameEl.value || 'untitled.html';
+                State.files[index].date = Date.now();
+                localStorage.setItem('romany_files', JSON.stringify(State.files));
+                State.isSaved = true;
+                document.getElementById('save-status').classList.add('status-saved');
+                if(!isAuto) Toast.show("تم حفظ الملف بنجاح");
+            }
+        };
+
+        const FileSystem = {
+            render() {
+                const list = document.getElementById('files-list');
+                list.innerHTML = '';
+                const sorted = [...State.files].sort((a, b) => b.date - a.date);
+                if(sorted.length === 0) {
+                    list.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 50px;">لا يوجد ملفات حالياً. ابدأ بإنشاء ملف جديد!</div>`;
+                    return;
+                }
+                sorted.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = 'file-card';
+                    card.innerHTML = `
+                        <h3>${file.name}</h3>
+                        <span class="date">آخر تعديل: ${new Date(file.date).toLocaleString('ar-EG')}</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm" style="flex:1" onclick="FileSystem.open('${file.id}')">دخول</button>
+                            <button class="btn btn-sm" onclick="FileSystem.duplicate('${file.id}')">📂</button>
+                            <button class="btn btn-sm" onclick="FileSystem.advancedDownload('${file.id}')">📥</button>
+                            <button class="btn btn-sm" style="color:var(--error)" onclick="FileSystem.delete('${file.id}')">🗑️</button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            },
+            open(id) {
+                const file = State.files.find(f => f.id === id);
+                Editor.load(file);
+                Navigation.to('editor');
+            },
+            duplicate(id) {
+                const file = State.files.find(f => f.id === id);
+                const newFile = {...file, id: 'f-'+Date.now(), name: file.name + ' (نسخة)', date: Date.now()};
+                State.files.push(newFile);
+                localStorage.setItem('romany_files', JSON.stringify(State.files));
+                this.render();
+                Toast.show("تم تكرار الملف", "info");
+            },
+            delete(id) {
+                State.files = State.files.filter(f => f.id !== id);
+                localStorage.setItem('romany_files', JSON.stringify(State.files));
+                this.render();
+                Toast.show("تم حذف الملف", "error");
+            },
+            download(id) {
+                // دالة قديمة - تم استبدال استخدامها بـ advancedDownload
+            }
+        };
+
+        const Preview = {
+            open() {
+                const code = Editor.el.value;
+                const blob = new Blob([code], {type: 'text/html'});
+                const url = URL.createObjectURL(blob);
+                document.getElementById('preview-iframe').src = url;
+                document.getElementById('modal-preview').style.display = 'flex';
+            },
+            close() { document.getElementById('modal-preview').style.display = 'none'; },
+            reload() { this.open(); },
+            openInTab() {
+                const code = Editor.el.value;
+                const win = window.open();
+                win.document.write(code);
+                win.document.close();
+            }
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if(e.ctrlKey && e.key === 's') { e.preventDefault(); Editor.save(); }
+            if(e.ctrlKey && e.key === 'Enter') { e.preventDefault(); Preview.open(); }
+            if(e.ctrlKey && e.key === 'n') { e.preventDefault(); Editor.createNew(); }
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-overlay').remove(), 500);
+                Editor.init();
+            }, 1000);
+        });
+
+        /* --- الدوال الجديدة (Add-Only) لتنفيذ طلباتك الأخيرة --- */
+        
+        // دالة التحميل الاحترافي التي تطلب مكان الحفظ
+        FileSystem.advancedDownload = async function(id) {
+            const file = State.files.find(f => f.id === id);
+            
+            // التأكد من دعم المتصفح لخاصية اختيار مكان الحفظ (File System Access API)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: file.name.endsWith('.html') ? file.name : file.name + '.html',
+                        types: [{
+                            description: 'HTML Code File',
+                            accept: {'text/html': ['.html']},
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(file.content);
+                    await writable.close();
+                    Toast.show("تم حفظ الملف في المكان المختار بنجاح");
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        Toast.show("فشل الحفظ المتقدم، جاري التحميل العادي", "error");
+                        this.fallbackDownload(file);
+                    }
+                }
+            } else {
+                // في حالة المتصفحات التي لا تدعم الخاصية (مثل بعض متصفحات الموبايل القديمة)
+                this.fallbackDownload(file);
+            }
+        };
+
+        // دالة تحميل احتياطية في حال عدم دعم المتصفح للاختيار اليدوي
+        FileSystem.fallbackDownload = function(file) {
+            const blob = new Blob([file.content], {type: 'text/html'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = file.name.endsWith('.html') ? file.name : file.name + '.html';
+            a.click();
+            Toast.show("تم تحميل الكود بنجاح (تنزيلات)");
+        };
+
+    </script>
+</body>
+</html>
