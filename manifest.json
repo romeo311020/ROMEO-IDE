@@ -1,0 +1,17 @@
+{
+  "name": "ROMEO CodePad",
+  "short_name": "ROMEO IDE",
+  "description": "Professional Web IDE and Live Matches Tracker",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/Gp5QYTPd/Picsart-26-05-03-04-30-32-110.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
